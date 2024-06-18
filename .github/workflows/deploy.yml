@@ -1,0 +1,39 @@
+name: Deploy to IIS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Deploy to IIS
+        env:
+          GCP_IP: ${{ secrets.GCP_IP }}
+          GCP_USERNAME: ${{ secrets.GCP_USERNAME }}
+          GCP_PASSWORD: ${{ secrets.GCP_PASSWORD }}
+        run: |
+          $password = ConvertTo-SecureString $env:GCP_PASSWORD -AsPlainText -Force
+          $credential = New-Object System.Management.Automation.PSCredential ($env:GCP_USERNAME, $password)
+          Invoke-Command -ComputerName $env:GCP_IP -Credential $credential -ScriptBlock {
+            param ($source, $destination)
+            Remove-Item -Recurse -Force $destination
+            Copy-Item -Recurse -Force $source $destination
+          } -ArgumentList "$pwd\publish", "C:\inetpub\wwwroot\HelloWorldApp"
