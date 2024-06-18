@@ -24,13 +24,21 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Upload to GCP Bucket
+        run: gsutil -m cp -r ./publish gs://your-gcp-bucket/HelloWorldApp/
+
       - name: Configure WinRM Client
         run: |
           winrm set winrm/config/client '@{AllowUnencrypted="true"}'
           winrm set winrm/config/client/auth '@{Basic="true"}'
-          winrm set winrm/config/client '@{TrustedHosts="$env:GCP_IP"}'
+          winrm set winrm/config/client '@{TrustedHosts="*"}'
 
-      - name: Deploy to IIS
+      - name: Deploy to IIS from GCP Bucket
         env:
           GCP_IP: ${{ secrets.GCP_IP }}
           GCP_USERNAME: ${{ secrets.GCP_USERNAME }}
@@ -39,7 +47,10 @@ jobs:
           $password = ConvertTo-SecureString $env:GCP_PASSWORD -AsPlainText -Force
           $credential = New-Object System.Management.Automation.PSCredential ($env:GCP_USERNAME, $password)
           Invoke-Command -ComputerName $env:GCP_IP -Credential $credential -Authentication Basic -ScriptBlock {
-            param ($source, $destination)
-            Remove-Item -Recurse -Force $destination
-            Copy-Item -Recurse -Force $source $destination
-          } -ArgumentList "$pwd\publish", "C:\inetpub\wwwroot\HelloWorldApp"
+            param ($bucket, $destination)
+            $localPath = "C:\inetpub\wwwroot\HelloWorldApp"
+            if (Test-Path $localPath) { Remove-Item -Recurse -Force $localPath }
+            New-Item -ItemType Directory -Path $localPath
+            $gsutilPath = "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gsutil.cmd"
+            & $gsutilPath cp -r "gs://$bucket/HelloWorldApp/*" $localPath
+          } -ArgumentList "your-gcp-bucket", "C:\inetpub\wwwroot\HelloWorldApp"
