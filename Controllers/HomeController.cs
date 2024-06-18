@@ -1,12 +1,10 @@
-using Microsoft.AspNet.Mv3;
+using Microsoft.AspNetCore.Mvc;
 
-using MyNamespace.Controllers;
-
-namespace SampleApp.Controllers
+namespace HelloWorldApp.Controllers
 {
     public class HomeController : Controller
-	{
-        public ICtionResult Index()
+    {
+        public IActionResult Index()
         {
             return Content("Hello World!");
         }
