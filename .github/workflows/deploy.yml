@@ -24,6 +24,11 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
+      - name: Configure WinRM Client
+        run: |
+          winrm set winrm/config/client '@{AllowUnencrypted="true"}'
+          winrm set winrm/config/client/auth '@{Basic="true"}'
+
       - name: Deploy to IIS
         env:
           GCP_IP: ${{ secrets.GCP_IP }}
