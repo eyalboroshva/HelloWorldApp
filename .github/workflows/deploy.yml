@@ -24,13 +24,24 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
+      - name: Install Google Cloud SDK
+        shell: bash
+        run: |
+          echo "Installing Google Cloud SDK..."
+          curl https://sdk.cloud.google.com | bash
+          source $HOME/.bashrc
+          gcloud components install gsutil
+
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Upload to GCP Bucket
-        run: gsutil -m cp -r ./publish gs://your-gcp-bucket/HelloWorldApp/
+        shell: bash
+        run: |
+          echo "Uploading files to GCP bucket..."
+          gsutil -m cp -r ./publish gs://your-gcp-bucket/HelloWorldApp/
 
       - name: Configure WinRM Client
         run: |
