@@ -18,7 +18,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.x'  # Updated to a supported version
+          dotnet-version: '6.0.x'
 
       - name: Build
         run: dotnet build --configuration Release
@@ -64,6 +64,12 @@ jobs:
 
           # Copy the published files to the site directory
           Copy-Item -Path "./publish/*" -Destination $sitePath -Recurse
+
+          # Ensure web.config is copied correctly
+          if (-not (Test-Path "$sitePath\web.config")) {
+              Write-Host "web.config file is missing after publish."
+              exit 1
+          }
 
           # Check if the site exists, if not, create it
           if (-not (Test-Path "IIS:\Sites\$siteName")) {
