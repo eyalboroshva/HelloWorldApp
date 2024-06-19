@@ -65,4 +65,21 @@ jobs:
           Copy-Item -Path "./publish/*" -Destination $sitePath -Recurse
 
           # Check if the site exists, if not, create it
-          if (-not (Test-Path "IIS:\Sites\$site
+          if (-not (Test-Path "IIS:\Sites\$siteName")) {
+              Write-Host "Site $siteName does not exist. Creating..."
+              try {
+                  New-WebSite -Name $siteName -Port 80 -PhysicalPath $sitePath -ApplicationPool $appPoolName
+              } catch {
+                  Write-Host "Error creating site: $_"
+                  exit 1
+              }
+          }
+
+          # Start the App Pool
+          try {
+              Start-WebAppPool -Name $appPoolName
+          } catch {
+              Write-Host "Error starting application pool: $_"
+              exit 1
+          }
+        shell: pwsh
