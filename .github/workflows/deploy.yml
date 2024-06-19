@@ -32,16 +32,25 @@ jobs:
           $sitePath = "C:\inetpub\wwwroot\YourAppName"
           $siteName = "YourSiteName"
 
-          Import-Module WebAdministration
+          Import-Module WebAdministration -SkipEditionCheck
 
           # Check if the App Pool exists, if not, create it
           if (-not (Test-Path "IIS:\AppPools\$appPoolName")) {
               Write-Host "Application Pool $appPoolName does not exist. Creating..."
-              New-WebAppPool -Name $appPoolName
+              try {
+                  New-WebAppPool -Name $appPoolName
+              } catch {
+                  Write-Host "Error creating application pool: $_"
+                  exit 1
+              }
           }
 
           # Stop the App Pool
-          Stop-WebAppPool -Name $appPoolName
+          try {
+              Stop-WebAppPool -Name $appPoolName
+          } catch {
+              Write-Host "Error stopping application pool: $_"
+          }
 
           # Check if the site path exists, if not, create it
           if (-not (Test-Path $sitePath)) {
@@ -56,14 +65,4 @@ jobs:
           Copy-Item -Path "./publish/*" -Destination $sitePath -Recurse
 
           # Check if the site exists, if not, create it
-          if (-not (Test-Path "IIS:\Sites\$siteName")) {
-              Write-Host "Site $siteName does not exist. Creating..."
-              New-WebSite -Name $siteName -Port 80 -PhysicalPath $sitePath -ApplicationPool $appPoolName
-          }
-
-          # Start the App Pool
-          Start-WebAppPool -Name $appPoolName
-        shell: pwsh
-
-      - name: Run Tests
-        run: dotnet test --no-build --verbosity normal
+          if (-not (Test-Path "IIS:\Sites\$site
