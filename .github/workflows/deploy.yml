@@ -32,7 +32,7 @@ jobs:
           $sitePath = "C:\inetpub\wwwroot\YourAppName"
           $siteName = "YourSiteName"
 
-          Import-Module WebAdministration -SkipEditionCheck
+          Import-Module WebAdministration
 
           # Check if the App Pool exists, if not, create it
           if (-not (Test-Path "IIS:\AppPools\$appPoolName")) {
@@ -83,3 +83,5 @@ jobs:
               exit 1
           }
         shell: pwsh
+        env:
+          DOTNET_ROOT: C:\Users\devops\AppData\Local\Microsoft\dotnet
