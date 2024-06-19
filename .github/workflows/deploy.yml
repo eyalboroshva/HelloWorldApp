@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on:
       - self-hosted
       - Windows
@@ -18,10 +18,19 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '6.0.x'  # Updated to a supported version
 
       - name: Build
         run: dotnet build --configuration Release
 
       - name: Publish
         run: dotnet publish -c Release -o ./publish
+
+      - name: Deploy to IIS
+        run: |
+          Import-Module WebAdministration
+          Stop-WebAppPool -Name "YourAppPoolName"
+          Remove-Item -Recurse -Force "C:\inetpub\wwwroot\YourAppName\*"
+          Copy-Item -Path "./publish/*" -Destination "C:\inetpub\wwwroot\YourAppName" -Recurse
+          Start-WebAppPool -Name "YourAppPoolName"
+        shell: pwsh
