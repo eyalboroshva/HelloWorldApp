@@ -28,9 +28,31 @@ jobs:
 
       - name: Deploy to IIS
         run: |
+          $appPoolName = "YourAppPoolName"
+          $sitePath = "C:\inetpub\wwwroot\YourAppName"
+
           Import-Module WebAdministration
-          Stop-WebAppPool -Name "YourAppPoolName"
-          Remove-Item -Recurse -Force "C:\inetpub\wwwroot\YourAppName\*"
-          Copy-Item -Path "./publish/*" -Destination "C:\inetpub\wwwroot\YourAppName" -Recurse
-          Start-WebAppPool -Name "YourAppPoolName"
+
+          if (Test-Path "IIS:\AppPools\$appPoolName") {
+              Stop-WebAppPool -Name $appPoolName
+          } else {
+              Write-Host "Application Pool $appPoolName does not exist."
+              exit 1
+          }
+
+          if (Test-Path $sitePath) {
+              Remove-Item -Recurse -Force "$sitePath\*"
+          } else {
+              Write-Host "Site path $sitePath does not exist. Creating..."
+              New-Item -Path $sitePath -ItemType Directory
+          }
+
+          Copy-Item -Path "./publish/*" -Destination $sitePath -Recurse
+
+          if (Test-Path "IIS:\AppPools\$appPoolName") {
+              Start-WebAppPool -Name $appPoolName
+          } else {
+              Write-Host "Application Pool $appPoolName does not exist."
+              exit 1
+          }
         shell: pwsh
