@@ -64,3 +64,6 @@ jobs:
           # Start the App Pool
           Start-WebAppPool -Name $appPoolName
         shell: pwsh
+
+      - name: Run Tests
+        run: dotnet test --no-build --verbosity normal
