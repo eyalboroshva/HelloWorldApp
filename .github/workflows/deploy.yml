@@ -30,29 +30,37 @@ jobs:
         run: |
           $appPoolName = "YourAppPoolName"
           $sitePath = "C:\inetpub\wwwroot\YourAppName"
+          $siteName = "YourSiteName"
 
           Import-Module WebAdministration
 
-          if (Test-Path "IIS:\AppPools\$appPoolName") {
-              Stop-WebAppPool -Name $appPoolName
-          } else {
-              Write-Host "Application Pool $appPoolName does not exist."
-              exit 1
+          # Check if the App Pool exists, if not, create it
+          if (-not (Test-Path "IIS:\AppPools\$appPoolName")) {
+              Write-Host "Application Pool $appPoolName does not exist. Creating..."
+              New-WebAppPool -Name $appPoolName
           }
 
-          if (Test-Path $sitePath) {
-              Remove-Item -Recurse -Force "$sitePath\*"
-          } else {
+          # Stop the App Pool
+          Stop-WebAppPool -Name $appPoolName
+
+          # Check if the site path exists, if not, create it
+          if (-not (Test-Path $sitePath)) {
               Write-Host "Site path $sitePath does not exist. Creating..."
               New-Item -Path $sitePath -ItemType Directory
+          } else {
+              # Remove existing files in the site path
+              Remove-Item -Recurse -Force "$sitePath\*"
           }
 
+          # Copy the published files to the site directory
           Copy-Item -Path "./publish/*" -Destination $sitePath -Recurse
 
-          if (Test-Path "IIS:\AppPools\$appPoolName") {
-              Start-WebAppPool -Name $appPoolName
-          } else {
-              Write-Host "Application Pool $appPoolName does not exist."
-              exit 1
+          # Check if the site exists, if not, create it
+          if (-not (Test-Path "IIS:\Sites\$siteName")) {
+              Write-Host "Site $siteName does not exist. Creating..."
+              New-WebSite -Name $siteName -Port 80 -PhysicalPath $sitePath -ApplicationPool $appPoolName
           }
+
+          # Start the App Pool
+          Start-WebAppPool -Name $appPoolName
         shell: pwsh
