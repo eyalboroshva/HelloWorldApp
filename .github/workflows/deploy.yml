@@ -1,73 +1,39 @@
-name: Build, Scan, and Deploy Docker Image to GCR
+name: Deploy .NET Application
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build_and_scan:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        version: 'latest'
-
-    - name: Configure Docker
-      run: |
-        gcloud auth configure-docker me-west1-docker.pkg.dev
+        dotnet-version: '5.0.x'
 
     - name: Build Docker image
       run: |
-        docker build --target publish -t me-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hello-world-dotnet/hello-world-dotnet:latest .
-
-    - name: Push Docker image
-      run: |
-        docker push me-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hello-world-dotnet/hello-world-dotnet:latest
-
-    - name: Wait for v-report
-      run: sleep 120
-
-    - name: Debug IMAGE_URI and DIGEST
-      run: |
-        IMAGE_URI=me-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hello-world-dotnet/hello-world-dotnet:latest
-        echo "IMAGE_URI: $IMAGE_URI"
-        DIGEST=$(gcloud container images describe $IMAGE_URI --format='value(image_summary.fully_qualified_digest)')
-        echo "DIGEST: $DIGEST"
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build_and_scan
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+        docker build -t me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        version: 'latest'
-
-    - name: Deploy to Cloud Run
+    - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: |
-        gcloud run deploy hello-world-dotnet \
-          --image me-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hello-world-dotnet/hello-world-dotnet:latest \
-          --platform managed \
-          --region ${{ secrets.GCP_REGION }} \
-          --allow-unauthenticated
+        gcloud auth configure-docker
+
+    - name: Push Docker image to Google Container Registry
+      run: |
+        docker push me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
