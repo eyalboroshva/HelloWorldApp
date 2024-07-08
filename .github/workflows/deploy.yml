@@ -21,10 +21,6 @@ jobs:
       with:
         dotnet-version: '5.0.x'
 
-    - name: Build Docker image
-      run: |
-        docker build -t me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
-
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
@@ -32,8 +28,19 @@ jobs:
 
     - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: |
-        gcloud auth configure-docker
+        gcloud auth configure-docker me-west1-docker.pkg.dev
 
-    - name: Push Docker image to Google Container Registry
+    - name: Build Docker image
+      run: |
+        docker build -t me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest .
+
+    - name: Push Docker image to Google Artifact Registry
       run: |
         docker push me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v1
+      with:
+        service: helloworldapp
+        image: me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
+        region: me-west1
