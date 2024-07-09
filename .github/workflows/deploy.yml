@@ -32,11 +32,11 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest .
+        docker build -t me-west1-docker.pkg.dev/shva-data-dev/helloworldapp/helloworldapp:latest .
 
     - name: Push Docker image to Google Artifact Registry
       run: |
-        docker push me-west1-docker.pkg.dev/poc-github/helloworldapp/helloworldapp:latest
+        docker push me-west1-docker.pkg.dev/shva-data-dev/helloworldapp/helloworldapp:latest
 
     - name: Deploy to Cloud Run
       uses: google-github-actions/deploy-cloudrun@v1
