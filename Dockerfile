@@ -21,4 +21,6 @@ RUN dotnet publish "./HelloWorldApp.csproj" -c $BUILD_CONFIGURATION -o /app/publ
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "HelloWorldApp.dll"]
+COPY startup.sh .
+ENTRYPOINT ["startup.sh"]
+# ENTRYPOINT ["dotnet", "HelloWorldApp.dll"]
